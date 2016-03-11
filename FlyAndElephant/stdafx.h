@@ -15,6 +15,6 @@
 #include <fstream>
 #include <list>
 #include <exception>
-
+#include <algorithm>
 
 // TODO: reference additional headers your program requires here
