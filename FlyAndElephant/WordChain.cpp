@@ -50,7 +50,6 @@ void WordChain::MakeChain(Dictionary& d)
 	size_t dictLen = d.GetCount();
 	string dictWord;
 	Word wrd("");
-	bool found = false;
 
 	//проверяем исходные слова на равенство длины
 	if (startWord.size() != endWord.size())
@@ -63,8 +62,6 @@ void WordChain::MakeChain(Dictionary& d)
 	//строим граф на базе исходного словаря,
 	//сперва добавляем вершины в граф (это слова, длина которых равна длине исходных слов)
 	//дублирующиеся слова в граф не включаются
-	grph.AddVertex(startWord);
-	grph.AddVertex(endWord);
 	for (; dictLen > 0; --dictLen)
 	{
 		dictWord = d[dictLen-1];
@@ -84,12 +81,18 @@ void WordChain::MakeChain(Dictionary& d)
 			if (GetDiffCount(grph.GetVertex(i), wrd) == 1 && j != i)
 				grph.GetVertex(i).AddEdge(j);
 		}
-	}									
+	}		
+
+	vector<bool> vertexInWay(grph.VertexCount(), false);	//метки вершин графа включённых в текущий путь (true, если i-ая вершина включена в путь)
+	vector<bool> exludedVertex(grph.VertexCount(), false);	//номера вершин через которые необходимый путь проложить нельзя
+
+	vertexInWay[grph.FindVertex(startWord)] = true;
+	exludedVertex[grph.FindVertex(startWord)] = true;
 
 	//ищем кратчайший путь
-	found = grph.FindShortPath(grph.FindVertex(startWord), grph.FindVertex(endWord), resultChain);
+	grph.FindShortPath(grph.FindVertex(startWord), grph.FindVertex(endWord), resultChain, vertexInWay, exludedVertex);
 
-	if (!found)
+	if (!resultChain.size())
 		throw exception("Not enough words in dictionary");
 }
 
@@ -115,20 +118,13 @@ size_t WordChain::GetDiffCount(const std::string& w1, const std::string& w2)
 	return diffCount;
 }
 
-bool WordChain::Graph::FindShortPath(const size_t start, 
-									 const size_t finish, 
-									 vector<string>& resultChain)
+bool WordChain::Graph::FindShortPath(const size_t start, const size_t finish, vector<string>& resultChain, vector<bool>& vertexInWay, vector<bool>& exludedVertex)
 {
 	static size_t wayLen = INT_MAX;								//длина пути
 	static vector<size_t> road(1, start);						//номера вершин текущего пути, внесли первую вершину в маршрут
-	static vector<bool> vertexInWay(VertexCount(), false);		//метки вершин графа включённых в путь (true, если i-ая вершина включена в путь)
-	static bool found = false;									//путь пока не найден
+	bool found = false;											//путь пока не найден
 	static size_t vertexCounter = 1;							//счетчик пройденных вершин
-	static vector<size_t> exludedVertex;						//номера вершин через которые необходимый путь проложить нельзя
 	size_t nextVertex;											//номер вершины куда делаем шаг
-	static vector<bool> vertexCanWay(VertexCount(), false);		//метки вершин графа через которые возможно пройти путь
-
-	vertexInWay[0] = true;
 
 	//лог для отладки
 	/*for (size_t i = 0; i < road.size(); ++i)
@@ -137,15 +133,10 @@ bool WordChain::Graph::FindShortPath(const size_t start,
 
 	if (start == finish)				//путь найден 
 	{
-		for (size_t i = 0; i < vertexInWay.size(); ++i)
-		{
-			if (vertexInWay[i]) 
-				vertexCanWay[i] = true;
-		}
+		found = true;
 		if (wayLen > vertexCounter)		//и он короче предыдущего найденного если он есть
 		{
 			wayLen = vertexCounter;
-			found = true;
 			resultChain.clear();
 			for (size_t i = 0; i < wayLen; ++i)
 				resultChain.push_back(GetVertex(road[i]));
@@ -157,7 +148,7 @@ bool WordChain::Graph::FindShortPath(const size_t start,
 		{
 			int weight = 0;
 
-			if (exludedVertex.end() != find(exludedVertex.begin(), exludedVertex.end(), nextVertex))	//если данную вершину уже проходили и через неё нельзя попасть к финишной вершине, то пропускаем её
+			if (exludedVertex[nextVertex])	//если данную вершину уже проходили и через неё нельзя попасть к финишной вершине, то пропускаем её
 				continue;
 
 			if (start != nextVertex)
@@ -170,16 +161,17 @@ bool WordChain::Graph::FindShortPath(const size_t start,
 
 				road.push_back(nextVertex);							//включить вершину в путь
 				vertexInWay[nextVertex] = true;						//пометить как влючёную
-				++vertexCounter;
-				FindShortPath(nextVertex, finish, resultChain);		//вызвать себя для поиска следующей точки
+				++vertexCounter;									//увеличить количество вершин в данном пути
+				if (FindShortPath(nextVertex, finish, resultChain, vertexInWay, exludedVertex))		//вызвать себя для поиска следующей точки
+					found = true;									//через вершину nextVertex можно дойти до конца пути
 				--vertexCounter;
 				road.pop_back();
 				vertexInWay[nextVertex] = false;
 			}
 		}
 
-		if (/*start != finish*/!vertexCanWay[start])
-			exludedVertex.push_back(start);
+		if (!found)
+			exludedVertex[start] = true;							//через данную вершину не смогли попасть в конец пути
 	}
 
 	return found ? true : false;
