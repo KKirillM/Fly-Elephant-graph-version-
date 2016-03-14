@@ -62,15 +62,16 @@ void WordChain::MakeChain(Dictionary& d)
 
 	//строим граф на базе исходного словаря,
 	//сперва добавляем вершины в граф (это слова, длина которых равна длине исходных слов)
+	//дублирующиеся слова в граф не включаются
 	grph.AddVertex(startWord);
+	grph.AddVertex(endWord);
 	for (; dictLen > 0; --dictLen)
 	{
 		dictWord = d[dictLen-1];
 
-		if (dictWord.size() == wordLen && startWord != dictWord && endWord != dictWord)
+		if (dictWord.size() == wordLen)
 			grph.AddVertex(dictWord);
 	}
-	grph.AddVertex(endWord);
 
 	//далее добавляем рёбра между вершинами графа
 	const size_t graphLen = grph.VertexCount();
@@ -81,14 +82,12 @@ void WordChain::MakeChain(Dictionary& d)
 			wrd.SetWord(grph.GetVertex(j));
 
 			if (GetDiffCount(grph.GetVertex(i), wrd) == 1 && j != i)
-			{
 				grph.GetVertex(i).AddEdge(j);
-			}
 		}
 	}									
 
 	//ищем кратчайший путь
-	found = grph.FindShortPath(0, grph.VertexCount()-1, resultChain);
+	found = grph.FindShortPath(grph.FindVertex(startWord), grph.FindVertex(endWord), resultChain);
 
 	if (!found)
 		throw exception("Not enough words in dictionary");
@@ -132,13 +131,13 @@ bool WordChain::Graph::FindShortPath(const size_t start,
 	vertexInWay[0] = true;
 
 	//лог для отладки
-	/*for (int i = 0; i < road.size(); ++i)
+	for (size_t i = 0; i < road.size(); ++i)
 		cout << (string)GetVertex(road[i]) << " ";
-	cout << endl;*/
+	cout << endl;
 
 	if (start == finish)				//путь найден 
 	{
-		for (int i = 0; i < vertexInWay.size(); ++i)
+		for (size_t i = 0; i < vertexInWay.size(); ++i)
 		{
 			if (vertexInWay[i]) 
 				vertexCanWay[i] = true;
@@ -162,7 +161,7 @@ bool WordChain::Graph::FindShortPath(const size_t start,
 				continue;
 
 			if (start != nextVertex)
-				weight = Find(start, nextVertex);
+				weight = FindPath(start, nextVertex);
 
 			if (weight && !vertexInWay[nextVertex])
 			{
@@ -187,7 +186,7 @@ bool WordChain::Graph::FindShortPath(const size_t start,
 }
 
 //проверка наличия пути из вершины с индексом vertexFirst в веришну vertexSecond (0, если пути нет, 1 если есть)
-int WordChain::Graph::Find(const size_t vertexStart, const size_t vertexFinish)
+int WordChain::Graph::FindPath(const size_t vertexStart, const size_t vertexFinish)
 {
 	for (size_t i = GetVertex(vertexStart).EdgesCount(); i > 0; --i)
 	{

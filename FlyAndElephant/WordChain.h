@@ -50,6 +50,8 @@ private:
 
 		operator std::string() const { return word; }
 
+		bool operator==(const Word& w) const { return word == (std::string)w; } 
+
 	private:
 		std::string word;
 		std::vector<size_t> edges;
@@ -62,13 +64,20 @@ private:
 		~Graph() { graph.clear(); }
 
 		//добавление вершины в граф
-		void AddVertex(const Word& w) { graph.push_back(w); }
+		void AddVertex(const Word& w) { if (graph.end() == std::find(graph.begin(), graph.end(), w)) graph.push_back(w); }
 
 		//получить значение нужной вершины
 		Word& GetVertex(const size_t i) { return graph[i]; }
 
 		//получить кол-во вершин графа
 		const size_t VertexCount() const { return graph.size(); }
+
+		const size_t FindVertex(const Word& w) const 
+		{ 
+			for (size_t i = 0; i < graph.size(); ++i)
+				if (graph[i] == w) return i;
+			return -1;
+		}
 
 		//рекурсивный поиск кратчайшего пути в графе между двумя вершинами
 		bool FindShortPath(const size_t start,							//индекс начальной вершины
@@ -78,7 +87,7 @@ private:
 	private:
 
 		//проверка наличия пути из вершины с индексом vertexStart в веришну vertexFinish (0, если пути нет, 1 если есть)
-		int Find(const size_t vertexStart, const size_t vertexFinish);
+		int FindPath(const size_t vertexStart, const size_t vertexFinish);
 
 	private:
 		std::vector<Word> graph;
