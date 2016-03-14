@@ -131,9 +131,9 @@ bool WordChain::Graph::FindShortPath(const size_t start,
 	vertexInWay[0] = true;
 
 	//лог для отладки
-	for (size_t i = 0; i < road.size(); ++i)
+	/*for (size_t i = 0; i < road.size(); ++i)
 		cout << (string)GetVertex(road[i]) << " ";
-	cout << endl;
+	cout << endl;*/
 
 	if (start == finish)				//путь найден 
 	{
