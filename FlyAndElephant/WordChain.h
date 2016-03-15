@@ -79,13 +79,18 @@ private:
 			return -1;
 		}
 
-		//рекурсивный поиск кратчайшего пути в графе между двумя вершинами
-		bool FindShortPath(const size_t start,							//индекс начальной вершины
+		//рекурсивный поиск в глубину кратчайшего пути в графе между двумя вершинами
+		bool FindShortPath1(const size_t start,							//индекс начальной вершины
 							const size_t finish,						//индекс конечной вершины
 							std::vector<std::string>& resultChain,		//результирующая цепочка слов
 							std::vector<bool>& vertexInWay,				//метки вершин графа включённых в текущий путь (true, если i-ая вершина включена в путь)
 							std::vector<bool>& exludedVertex);			//номера вершин через которые необходимый путь проложить нельзя
 
+		//поиск в ширину кратчайшего пути в графе между двумя вершинами
+		void FindShortPath2(const size_t start,							//индекс начальной вершины
+							const size_t finish,						//индекс конечной вершины
+							std::vector<std::string>& resultChain);		//результирующая цепочка слов
+							
 	private:
 
 		//проверка наличия пути из вершины с индексом vertexStart в веришну vertexFinish (0, если пути нет, 1 если есть)
